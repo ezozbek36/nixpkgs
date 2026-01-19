@@ -1,34 +1,28 @@
 {
   lib,
-  fetchFromGitHub,
+  stdenv,
+  fetchurl,
   jre_headless,
   makeWrapper,
-  maven,
 }:
 
-maven.buildMavenPackage rec {
+stdenv.mkDerivation rec {
   pname = "ktfmt";
-  version = "0.51";
+  version = "0.61";
 
-  src = fetchFromGitHub {
-    owner = "facebook";
-    repo = "ktfmt";
-    tag = "v${version}";
-    hash = "sha256-TIYV/V6vtGTTSLFf9dcKo8Ezx61e7Vvz3vQvbh0Kj/Y=";
+  src = fetchurl {
+    url = "https://github.com/facebook/ktfmt/releases/download/v${version}/ktfmt-${version}-with-dependencies.jar";
+    hash = "sha256-sqbvAjUqTEralmEBlgOBKah3183dNP5SkMdkvOmM1fk=";
   };
 
-  patches = [ ./pin-default-maven-plugin-versions.patch ];
-
-  mvnHash = "sha256-f/Uwc0ynROEKl2+zsgqj5ctRu1QcNblF5suU/0+fvKw=";
-
-  mvnParameters = "-Dproject.build.outputTimestamp=1980-01-01T00:00:02Z";
+  dontUnpack = true;
 
   nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     runHook preInstall
 
-    install -Dm644 core/target/ktfmt-*-jar-with-dependencies.jar $out/share/ktfmt/ktfmt.jar
+    install -Dm644 $src $out/share/ktfmt/ktfmt.jar
 
     makeWrapper ${jre_headless}/bin/java $out/bin/ktfmt \
       --add-flags "-jar $out/share/ktfmt/ktfmt.jar"
